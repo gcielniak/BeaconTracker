@@ -17,7 +17,10 @@ public class NNTracker implements OnScanListener {
     String TAG = "NNTracker";
     List<Beacon> beacons;
     List<Scan> current_scan;
+    List<Integer> beacon_history;
+
     float alpha;
+    int N;
     Scan current_estimate;
     OnScanListener scan_listener;
     OnScanListListener scan_list_listener;
@@ -31,6 +34,7 @@ public class NNTracker implements OnScanListener {
         current_scan = new ArrayList<>();
         current_estimate = new Scan();
         alpha = 1.0f;
+        N = 1;
         LoadSettings();
     }
 
@@ -60,42 +64,77 @@ public class NNTracker implements OnScanListener {
 
     @Override
     public void onScan(Scan scan) {
-        for (Beacon b : beacons) {
-            if (b.mac_address.equals(scan.mac_address)) {
-                //add scan to list
-                int indx = current_scan.indexOf(scan);
-                if (indx != -1) {
-                    if (current_scan.get(indx).timestamp == scan.timestamp)
-                        return;
-                    scan.value = (scan.value * alpha) + (1 - alpha) * current_scan.get(indx).value;
-                    current_scan.set(indx, scan);
-                } else
-                    current_scan.add(scan);
+        int beacon_id = -1;
 
-                scan_list_listener.onScanList(current_scan);
-
-                //max beacon
-                Scan max_scan = new Scan();
-                max_scan.value = Float.NEGATIVE_INFINITY;
-
-                for (Scan s : current_scan) {
-                    if (s.value > max_scan.value)
-                        max_scan = s;
-                }
-
-                for (Beacon b_max : beacons) {
-                    if (b_max.mac_address.equals(max_scan.mac_address)) {
-                        current_estimate.translation[0] = b_max.x;
-                        current_estimate.translation[1] = b_max.y;
-                        current_estimate.translation[2] = b_max.z;
-                        current_estimate.value = max_scan.value;
-                        scan_listener.onScan(current_estimate);
-                        return;
-                    }
-                }
-
-                scan_listener.onScan(null);
+        for (int i = 0; i < beacons.size(); i++) {
+            if (beacons.get(i).mac_address.equals(scan.mac_address)) {
+                beacon_id = i;
+                break;
             }
         }
+
+        if (beacon_id == -1)
+            return;
+
+        //update the scan
+        int indx = current_scan.indexOf(scan);
+        if (indx != -1) {
+            if (current_scan.get(indx).timestamp == scan.timestamp)
+                return;
+            scan.value = (scan.value * alpha) + (1 - alpha) * current_scan.get(indx).value;
+            current_scan.set(indx, scan);
+        } else
+            current_scan.add(scan);
+
+        scan_list_listener.onScanList(current_scan);
+
+        //max beacon count from last N scans
+
+        //max beacon
+        Scan max_scan = new Scan();
+        max_scan.value = Float.NEGATIVE_INFINITY;
+
+        //find the max value
+        for (Scan s : current_scan) {
+            if (s.value > max_scan.value)
+                max_scan = s;
+        }
+
+        //find the corresponding beacon id
+        for (int i = 0; i < beacons.size(); i++) {
+            if (beacons.get(i).mac_address.equals(max_scan.mac_address)) {
+                beacon_id = i;
+                break;
+            }
+        }
+
+        //update the beacon history
+        beacon_history.add(beacon_id);
+        if (beacon_history.size() > N)
+            beacon_history.remove(1);
+
+        //count number of beacon ids in the history list
+        int b_count[] = new int[beacons.size()];
+
+        for (int i = 0; i < beacon_history.size(); i++)
+            b_count[beacon_history.get(i)] += 1;
+
+        //select a beacon with the highest count
+        int max_index = 0;
+        int max_count = 0;
+
+        for (int i = 0; i < b_count.length; i++)
+            if (b_count[i] > max_count) {
+                max_count = b_count[i];
+                max_index = i;
+            }
+
+        //update estimate
+        Beacon b_max = beacons.get(max_index);
+        current_estimate.translation[0] = b_max.x;
+        current_estimate.translation[1] = b_max.y;
+        current_estimate.translation[2] = b_max.z;
+        current_estimate.value = max_scan.value;
+        scan_listener.onScan(current_estimate);
     }
 }
