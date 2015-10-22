@@ -4,6 +4,8 @@ import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
 import android.os.SystemClock;
 
+import java.util.Arrays;
+
 /**
  * Created by gcielniak on 04/10/2015.
  */
@@ -49,6 +51,7 @@ public class BluetoothScanner {
             scan.value = (double) rssi;
             scan.translation = current_pose.translation;
             scan.rotation = current_pose.rotation;
+            scan.uuid = new Scan.UUID(Arrays.copyOfRange(scanRecord, 9, 29));
 
             listener.onScan(scan);
         }

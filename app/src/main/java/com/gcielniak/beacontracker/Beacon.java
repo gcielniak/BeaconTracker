@@ -6,9 +6,10 @@ package com.gcielniak.beacontracker;
 public class Beacon {
     String mac_address;
     double x, y, z;
+    Scan.UUID uuid;
 
     @Override
     public String toString() {
-        return new String("a=" + mac_address + " x=" + x + " y=" + y + " z=" + z);
+        return new String("a=" + mac_address + " x=" + x + " y=" + y + " z=" + z + " u=" + uuid);
     }
 }

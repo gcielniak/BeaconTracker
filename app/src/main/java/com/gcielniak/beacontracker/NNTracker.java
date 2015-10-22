@@ -45,7 +45,11 @@ public class NNTracker implements OnScanListener {
             while ((str=beacon_settings.readLine())!=null && str.length()!=0) {
                 String[] res = str.split(" ");
                 Beacon beacon = new Beacon();
-                beacon.mac_address = res[0].substring(2);
+                String id = res[0].substring(2).toUpperCase();
+                if (id.length() == 17)
+                    beacon.mac_address = id;
+                 else if (id.length() == 40)
+                    beacon.uuid = new Scan.UUID(id);
                 beacon.x = Double.parseDouble(res[1].substring(2));
                 beacon.y = Double.parseDouble(res[2]);
                 beacon.z = Double.parseDouble(res[3]);
@@ -61,7 +65,12 @@ public class NNTracker implements OnScanListener {
     @Override
     public void onScan(Scan scan) {
         for (Beacon b : beacons) {
-            if (b.mac_address.equals(scan.mac_address)) {
+            if ((b.mac_address != null) && b.mac_address.equals(scan.mac_address) || ((b.uuid != null) && b.uuid.equals(scan.uuid))) {
+                //update the beacon's mac address if necessary
+                //will result in faster matching by mac_address
+                if (b.mac_address == null)
+                    b.mac_address = scan.mac_address;
+
                 //add scan to list
                 int indx = current_scan.indexOf(scan);
                 if (indx != -1) {
@@ -84,7 +93,7 @@ public class NNTracker implements OnScanListener {
                 }
 
                 for (Beacon b_max : beacons) {
-                    if (b_max.mac_address.equals(max_scan.mac_address)) {
+                    if ((b_max.mac_address != null) && b_max.mac_address.equals(max_scan.mac_address)) {
                         current_estimate.translation[0] = b_max.x;
                         current_estimate.translation[1] = b_max.y;
                         current_estimate.translation[2] = b_max.z;

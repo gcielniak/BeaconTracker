@@ -6,6 +6,7 @@ import android.graphics.Color;
 import android.graphics.Paint;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.View;
 import java.util.List;
 
@@ -26,6 +27,7 @@ public class MainActivity extends AppCompatActivity implements OnScanListener, O
 
         bluetooth_tracker = new NNTracker(this, this);
         bluetooth_scanner = new BluetoothScanner(bluetooth_tracker);
+        bluetooth_tracker.alpha = 0.5f;
     }
 
     @Override
@@ -44,13 +46,23 @@ public class MainActivity extends AppCompatActivity implements OnScanListener, O
     @Override
     public void onScan(Scan scan) {
         current_estimate = scan;
-        map_view.invalidate();
+        MainActivity.this.runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+                map_view.invalidate();
+            }
+        });
     }
 
     @Override
     public void onScanList(List<Scan> scan_list) {
         current_scan = scan_list;
-        map_view.invalidate();
+        MainActivity.this.runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+                map_view.invalidate();
+            }
+        });
     }
 
     class MapView extends View {
@@ -84,10 +96,11 @@ public class MainActivity extends AppCompatActivity implements OnScanListener, O
             b_width = x_max - x_min;
             b_height = y_max - y_min;
 
-            x_min -= b_width*0.1;
-            x_max += b_width*0.1;
-            y_min -= b_height*0.1;
-            y_max += b_height*0.1;
+            float padding=0.05f;
+            x_min -= b_width*padding;
+            x_max += b_width*padding;
+            y_min -= b_height*padding;
+            y_max += b_height*padding;
             b_width = x_max - x_min;
             b_height = y_max - y_min;
             ratio = b_width;
@@ -102,7 +115,7 @@ public class MainActivity extends AppCompatActivity implements OnScanListener, O
         }
 
         float getY(float y) {
-            return height*(y-y_min)/ratio;
+            return height - (height*(y-y_min)/ratio);
         }
 
         public void onDraw(Canvas canvas) {
@@ -117,7 +130,7 @@ public class MainActivity extends AppCompatActivity implements OnScanListener, O
             canvas.drawPaint(paint);
             paint.setColor(Color.argb(255, 128, 128, 128));
 
-            float radius = 10;
+            float radius = 5;
 
             List<Beacon> beacons = bluetooth_tracker.beacons;
 
@@ -128,22 +141,22 @@ public class MainActivity extends AppCompatActivity implements OnScanListener, O
             if (current_scan != null) {
                 for (Scan s : current_scan) {
                     for (Beacon b : beacons) {
-                        if (b.mac_address.equals(s.mac_address)) {
-                            float strength = Math.abs(-120-(float)s.value)/200;
-                            radius = (1-strength)*150;
-                            int alpha = (int)(strength*255);
+                        if ((b.mac_address != null) && b.mac_address.equals(s.mac_address)) {
+                            double strength = Math.min(Math.abs(-120-(float)s.value)/80, 1.0);
+                            strength *= strength;
+                            radius = (float)(1-strength)*50;
+                            int alpha = (int)(strength*255*0.5);
                             paint.setColor(Color.argb(alpha, 255, 0, 0));
                             float cx = width*((float)b.x-x_min)/ratio;
                             float cy = height*((float)b.y-y_min)/ratio;
-                            canvas.drawCircle(getX((float)b.x), getY((float)b.y), radius, paint);
+                            canvas.drawCircle(getX((float) b.x), getY((float)b.y), radius, paint);
                         }
                     }
                 }
             }
-
             if (current_estimate != null) {
-                radius = 40;
-                paint.setColor(Color.argb(255, 0, 255, 0));
+                radius = 20;
+                paint.setColor(Color.argb(180, 0, 255, 0));
                 canvas.drawCircle(getX((float)current_estimate.translation[0]), getY((float)current_estimate.translation[1]), radius, paint);
             }
         }
