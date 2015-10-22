@@ -96,11 +96,15 @@ public class MainActivity extends AppCompatActivity implements OnScanListener, O
             b_width = x_max - x_min;
             b_height = y_max - y_min;
 
-            float padding=0.05f;
-            x_min -= b_width*padding;
-            x_max += b_width*padding;
-            y_min -= b_height*padding;
-            y_max += b_height*padding;
+            double padd = b_width*0.05;
+            if (b_height*0.05 > padd)
+                padd = b_height*0.05;
+
+            x_min -= padd;
+            x_max += padd;
+            y_min -= padd;
+            y_max += padd;
+
             b_width = x_max - x_min;
             b_height = y_max - y_min;
             ratio = b_width;
