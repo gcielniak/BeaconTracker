@@ -51,7 +51,7 @@ public class BluetoothScanner {
             scan.value = (double) rssi;
             scan.translation = current_pose.translation;
             scan.rotation = current_pose.rotation;
-            scan.uuid = new Scan.UUID(Arrays.copyOfRange(scanRecord, 9, 29));
+            scan.uuid = new UUID(Arrays.copyOfRange(scanRecord, 9, 29));
 
             listener.onScan(scan);
         }
