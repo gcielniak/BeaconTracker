@@ -1,6 +1,7 @@
 package com.gcielniak.beacontracker;
 
 import android.os.Environment;
+import android.os.SystemClock;
 import android.util.Log;
 
 import java.io.BufferedReader;
@@ -20,6 +21,8 @@ public class NNTracker implements OnScanListener {
     List<Integer> beacon_history;
     float alpha;
     int N;
+    long timeout_period;
+
     Scan current_estimate;
     OnScanListener scan_listener;
     OnScanListListener scan_list_listener;
@@ -35,6 +38,8 @@ public class NNTracker implements OnScanListener {
         current_estimate = new Scan();
         alpha = 1.0f;
         N = 1;
+        timeout_period = 1000000;//1 s.
+
         LoadSettings();
     }
 
@@ -53,7 +58,7 @@ public class NNTracker implements OnScanListener {
                 if (id.length() == 17)
                     beacon.mac_address = id;
                  else if (id.length() == 40)
-                    beacon.uuid = new Scan.UUID(id);
+                    beacon.uuid = new UUID(id);
                 beacon.x = Double.parseDouble(res[1].substring(2));
                 beacon.y = Double.parseDouble(res[2]);
                 beacon.z = Double.parseDouble(res[3]);
@@ -66,37 +71,42 @@ public class NNTracker implements OnScanListener {
 
     List<Beacon> Beacons() { return beacons; }
 
-    @Override
-    public void onScan(Scan scan) {
-        int beacon_id = -1;
+    boolean IdentifyBeacon(Scan scan) {
 
-        for (int i = 0; i < beacons.size(); i++) {
-            Beacon b = beacons.get(i);
-            if (((b.mac_address != null) && b.mac_address.equals(scan.mac_address)) ||
-                    ((b.uuid != null) && b.uuid.equals(scan.uuid))) {
-                beacon_id = i;
-                break;
+        for (Beacon b: beacons) {
+            if (b.mac_address.equals(scan.mac_address)) {
+                return true;
+            }
+            else if (b.uuid.equals(scan.uuid)) {
+                b.mac_address = scan.mac_address;//update beacon's mac address if not present
+                return true;
             }
         }
 
-        if (beacon_id == -1)
-            return;
+        return false;
+    }
 
-        if (beacons.get(beacon_id).mac_address == null)
-            beacons.get(beacon_id).mac_address = scan.mac_address;
+    void UpdateCurrentScan(Scan scan) {
 
-        //update the scan
+        long current_timestamp = SystemClock.elapsedRealtimeNanos() / 1000;
+
         int indx = current_scan.indexOf(scan);
-        if (indx != -1) {
-            if (current_scan.get(indx).timestamp == scan.timestamp)
-                return;
+        if (indx != -1) { //update the current scan
             scan.value = (scan.value * alpha) + (1 - alpha) * current_scan.get(indx).value;
             current_scan.set(indx, scan);
-        } else
+        } else //add new reading
             current_scan.add(scan);
 
-        scan_list_listener.onScanList(current_scan);
+        //check for old scans and remove
+        for (int i = current_scan.size(); i > 0; i--) {
+            if ((current_timestamp - current_scan.get(i-1).timestamp) > timeout_period)
+                current_scan.remove(i-1);
+        }
 
+        scan_list_listener.onScanList(current_scan);
+    }
+
+    void NNEstimate(Scan scan) {
         //max beacon count from last N scans
 
         //max beacon
@@ -109,9 +119,10 @@ public class NNTracker implements OnScanListener {
                 max_scan = s;
         }
 
+        int beacon_id = -1;
         //find the corresponding beacon id
         for (int i = 0; i < beacons.size(); i++) {
-            if ((beacons.get(i).mac_address != null) && beacons.get(i).mac_address.equals(max_scan.mac_address)) {
+            if (beacons.get(i).mac_address.equals(max_scan.mac_address)) {
                 beacon_id = i;
                 break;
             }
@@ -145,5 +156,15 @@ public class NNTracker implements OnScanListener {
         current_estimate.translation[2] = b_max.z;
         current_estimate.value = max_scan.value;
         scan_listener.onScan(current_estimate);
+    }
+
+    @Override
+    public void onScan(Scan scan) {
+
+        if (IdentifyBeacon(scan)) {
+            UpdateCurrentScan(scan);
+            NNEstimate(scan);
+        }
+
     }
 }
