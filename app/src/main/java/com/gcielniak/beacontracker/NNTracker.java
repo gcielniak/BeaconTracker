@@ -32,9 +32,9 @@ public class NNTracker implements OnScanListener {
     NNTracker(OnScanListener scan_listener, OnScanListListener scan_list_listener) {
         this.scan_listener = scan_listener;
         this.scan_list_listener = scan_list_listener;
-        beacons = new ArrayList<>();
-        current_scan = new ArrayList<>();
-        beacon_history = new ArrayList<>();
+        beacons = new ArrayList<Beacon>();
+        current_scan = new ArrayList<Scan>();
+        beacon_history = new ArrayList<Integer>();
         current_estimate = new Scan();
         alpha = 1.0f;
         N = 1;
