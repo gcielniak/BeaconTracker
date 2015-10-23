@@ -64,7 +64,7 @@ public class UUID {
 
     @Override
     public boolean equals(Object o) {
-        if (o instanceof Scan) {
+        if (o instanceof UUID) {
             UUID uuid = (UUID)o;
 
             if ((this.data == null) || (uuid.data == null) || (this.data.length != uuid.data.length))
