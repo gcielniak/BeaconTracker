@@ -6,6 +6,7 @@ import android.graphics.Color;
 import android.graphics.Paint;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.View;
 import java.util.List;
 
@@ -68,12 +69,9 @@ public class MainActivity extends AppCompatActivity implements OnScanListener, O
         int width, height;
         float x_min, x_max, y_min, y_max;
         float b_width, b_height, ratio;
-        Paint paint;
 
         public MapView(Context context) {
-
             super(context);
-            paint = new Paint();
         }
 
         public void onResume() {
@@ -113,19 +111,23 @@ public class MainActivity extends AppCompatActivity implements OnScanListener, O
             if (b_height > ratio) {
                 ratio = b_height;
             }
+
         }
 
-        float getX(double x) {
-            return (float)(width*(x-x_min-b_width/2)/ratio + width/2);
+        float getX(float x) {
+            return width*(x-x_min-b_width/2)/ratio + width/2;
         }
 
-        float getY(double y) { return (float)(height - (height*(y-y_min)/ratio)); }
+        float getY(float y) {
+            return height - (height*(y-y_min)/ratio);
+        }
 
         public void onDraw(Canvas canvas) {
             super.onDraw(canvas);
 
             width = getWidth();
             height = getHeight();
+            Paint paint = new Paint();
 
             paint.setStyle(Paint.Style.FILL);
             paint.setColor(Color.WHITE);
@@ -137,19 +139,21 @@ public class MainActivity extends AppCompatActivity implements OnScanListener, O
             List<Beacon> beacons = bluetooth_tracker.beacons;
 
             for (Beacon b : beacons) {
-                canvas.drawCircle(getX(b.x), getY(b.y), radius, paint);
+                canvas.drawCircle(getX((float)b.x), getY((float)b.y), radius, paint);
             }
 
             if (current_scan != null) {
                 for (Scan s : current_scan) {
                     for (Beacon b : beacons) {
                         if ((b.mac_address != null) && b.mac_address.equals(s.mac_address)) {
-                            double strength = Math.min(Math.abs(-120-s.value)/80, 1.0);
+                            double strength = Math.min(Math.abs(-120-(float)s.value)/80, 1.0);
                             strength *= strength;
                             radius = (float)(1-strength)*50;
                             int alpha = (int)(strength*255*0.5);
                             paint.setColor(Color.argb(alpha, 255, 0, 0));
-                            canvas.drawCircle(getX(b.x), getY(b.y), radius, paint);
+                            float cx = width*((float)b.x-x_min)/ratio;
+                            float cy = height*((float)b.y-y_min)/ratio;
+                            canvas.drawCircle(getX((float) b.x), getY((float)b.y), radius, paint);
                         }
                     }
                 }
@@ -157,7 +161,7 @@ public class MainActivity extends AppCompatActivity implements OnScanListener, O
             if (current_estimate != null) {
                 radius = 20;
                 paint.setColor(Color.argb(180, 0, 255, 0));
-                canvas.drawCircle(getX(current_estimate.translation[0]), getY(current_estimate.translation[1]), radius, paint);
+                canvas.drawCircle(getX((float)current_estimate.translation[0]), getY((float)current_estimate.translation[1]), radius, paint);
             }
         }
     }

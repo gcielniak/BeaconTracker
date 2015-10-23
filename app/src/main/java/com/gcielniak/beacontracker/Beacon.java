@@ -1,18 +1,12 @@
 package com.gcielniak.beacontracker;
 
 /**
- * Beacon class including its identity (MAC address and UUID) and location (x, y, z)
- *
+ * Created by gcielniak on 11/10/2015.
  */
 public class Beacon {
     String mac_address;
     double x, y, z;
-    UUID uuid;
-
-    Beacon() {
-        mac_address = "";
-        uuid = new UUID("");
-    }
+    Scan.UUID uuid;
 
     @Override
     public String toString() {
