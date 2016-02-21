@@ -17,6 +17,7 @@ public class MainActivity extends AppCompatActivity implements OnScanListener, O
     List<Scan> current_scan;
     Scan current_estimate;
     MapView map_view;
+    FileScanner file_scanner;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -27,6 +28,7 @@ public class MainActivity extends AppCompatActivity implements OnScanListener, O
         bluetooth_tracker = new NNTracker(this, this);
         bluetooth_scanner = new BluetoothScanner(bluetooth_tracker);
         bluetooth_tracker.alpha = 0.5f;
+        file_scanner = new FileScanner(bluetooth_tracker);
     }
 
     @Override
@@ -34,6 +36,7 @@ public class MainActivity extends AppCompatActivity implements OnScanListener, O
         super.onResume();
         map_view.onResume();
         bluetooth_scanner.Start();
+        file_scanner.Start();
     }
 
     @Override
