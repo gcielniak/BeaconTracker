@@ -161,6 +161,8 @@ public class NNTracker implements OnScanListener {
     @Override
     public void onScan(Scan scan) {
 
+        Log.i("NNTRACKER ONSCAN: ",scan.toString());
+
         if (IdentifyBeacon(scan)) {
             UpdateCurrentScan(scan);
             NNEstimate(scan);

@@ -7,6 +7,8 @@ import android.graphics.Paint;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.view.View;
+import android.widget.Toast;
+
 import java.util.List;
 
 public class MainActivity extends AppCompatActivity implements OnScanListener, OnScanListListener{
@@ -29,13 +31,17 @@ public class MainActivity extends AppCompatActivity implements OnScanListener, O
         bluetooth_scanner = new BluetoothScanner(bluetooth_tracker);
         bluetooth_tracker.alpha = 0.5f;
         file_scanner = new FileScanner(bluetooth_tracker);
+        file_scanner.SetFile("test.txt");
     }
 
     @Override
     public void onResume() {
         super.onResume();
         map_view.onResume();
-        bluetooth_scanner.Start();
+        if (!bluetooth_scanner.Start())
+            Toast.makeText(getApplicationContext(), "Bluetooth not enabled!",
+                    Toast.LENGTH_SHORT).show();
+
         file_scanner.Start();
     }
 
@@ -43,6 +49,7 @@ public class MainActivity extends AppCompatActivity implements OnScanListener, O
     public void onPause() {
         super.onPause();
         bluetooth_scanner.Stop();
+        file_scanner.Stop();
     }
 
     @Override

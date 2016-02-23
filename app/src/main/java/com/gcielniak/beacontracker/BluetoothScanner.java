@@ -24,8 +24,14 @@ public class BluetoothScanner {
         this.current_pose = current_pose;
     }
 
-    public void Start() {
-        adapter.startLeScan(receiver);
+    public boolean Start() {
+        if (adapter.isEnabled()) {
+            adapter.startLeScan(receiver);
+            return true;
+        }
+        else {
+            return false;
+        }
     }
 
     public void Stop() {
