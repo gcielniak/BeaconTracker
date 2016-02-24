@@ -1,6 +1,7 @@
 package com.gcielniak.beacontracker;
 
 import java.util.Arrays;
+import java.util.List;
 
 /**
  * Proximity UUID structure
@@ -25,6 +26,23 @@ public class UUID {
 
     UUID(String input) {
         this.data = parseHexBinary(input);
+    }
+
+    static public byte[] GetProxUUID(byte[] data) {
+        int data_length = 1;
+        for (int i = 0; i < data.length; i++) {
+            if (data[i] == 0)
+                return null;
+
+            //ProximityUUID
+            if ((data[i] == 0x1A) && (data[i+1] == (byte)0xFF) && (data[i+2] == 0x4C)
+                    && (data[i+3] == 0x00) && (data[i+4] == 0x02) && (data[i+5] == 0x15)) {
+                return Arrays.copyOfRange(data, i+6, i+26);
+            }
+
+            i += data[i];
+        }
+        return null;
     }
 
     public byte[] parseHexBinary(String s) {
@@ -55,7 +73,7 @@ public class UUID {
         return -1;
     }
 
-    private static String byteArrayToHex(byte[] a) {
+    public static String byteArrayToHex(byte[] a) {
         StringBuilder sb = new StringBuilder(a.length * 2);
         for(byte b: a)
             sb.append(String.format("%02X", b & 0xff));

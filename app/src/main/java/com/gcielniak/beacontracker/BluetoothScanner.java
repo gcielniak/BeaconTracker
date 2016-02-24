@@ -3,8 +3,10 @@ package com.gcielniak.beacontracker;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
 import android.os.SystemClock;
+import android.util.Log;
 
 import java.util.Arrays;
+import java.util.List;
 
 /**
  * Created by gcielniak on 04/10/2015.
@@ -57,7 +59,7 @@ public class BluetoothScanner {
             scan.value = (double) rssi;
             scan.translation = current_pose.translation;
             scan.rotation = current_pose.rotation;
-            scan.uuid = new UUID(Arrays.copyOfRange(scanRecord, 9, 29));
+            scan.uuid = new UUID(UUID.GetProxUUID(scanRecord));
 
             listener.onScan(scan);
         }
