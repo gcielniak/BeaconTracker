@@ -1,5 +1,9 @@
 package com.gcielniak.beacontracker;
 
+import com.gcielniak.scannerlib.BluetoothScanner;
+import com.gcielniak.scannerlib.FileScanner;
+import com.gcielniak.scannerlib.OnReadingListener;
+import com.gcielniak.scannerlib.Reading;
 import android.content.Context;
 import android.graphics.Canvas;
 import android.graphics.Color;
@@ -11,13 +15,13 @@ import android.widget.Toast;
 
 import java.util.List;
 
-public class MainActivity extends AppCompatActivity implements OnScanListener, OnScanListListener{
+public class MainActivity extends AppCompatActivity implements OnReadingListener, OnScanListListener{
 
     String TAG = "MainActivity";
     BluetoothScanner bluetooth_scanner;
     NNTracker bluetooth_tracker;
-    List<Scan> current_scan;
-    Scan current_estimate;
+    List<Reading> current_scan;
+    Reading current_estimate;
     MapView map_view;
     FileScanner file_scanner;
 
@@ -53,7 +57,7 @@ public class MainActivity extends AppCompatActivity implements OnScanListener, O
     }
 
     @Override
-    public void onScan(Scan scan) {
+    public void onReading(Reading scan) {
         current_estimate = scan;
         MainActivity.this.runOnUiThread(new Runnable() {
             @Override
@@ -64,7 +68,7 @@ public class MainActivity extends AppCompatActivity implements OnScanListener, O
     }
 
     @Override
-    public void onScanList(List<Scan> scan_list) {
+    public void onScanList(List<Reading> scan_list) {
         current_scan = scan_list;
         MainActivity.this.runOnUiThread(new Runnable() {
             @Override
@@ -151,9 +155,9 @@ public class MainActivity extends AppCompatActivity implements OnScanListener, O
             }
 
             if (current_scan != null) {
-                for (Scan s : current_scan) {
+                for (Reading s : current_scan) {
                     for (Beacon b : beacons) {
-                        if ((b.mac_address != null) && b.mac_address.equals(s.mac_address)) {
+                        if ((b.mac_address != null) && b.mac_address.equals(s.getMacAddress())) {
                             double strength = Math.min(Math.abs(-120-s.value)/80, 1.0);
                             strength *= strength;
                             radius = (float)(1-strength)*50;

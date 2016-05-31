@@ -1,5 +1,7 @@
 package com.gcielniak.beacontracker;
 
+import com.gcielniak.scannerlib.UUID;
+
 /**
  * Beacon class including its identity (MAC address and UUID) and location (x, y, z)
  *

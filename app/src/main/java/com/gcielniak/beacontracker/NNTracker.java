@@ -4,6 +4,10 @@ import android.os.Environment;
 import android.os.SystemClock;
 import android.util.Log;
 
+import com.gcielniak.scannerlib.OnReadingListener;
+import com.gcielniak.scannerlib.Reading;
+import com.gcielniak.scannerlib.UUID;
+
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
@@ -14,28 +18,28 @@ import java.util.List;
 /**
  * Created by gcielniak on 11/10/2015.
  */
-public class NNTracker implements OnScanListener {
+public class NNTracker implements OnReadingListener {
     String TAG = "NNTracker";
     List<Beacon> beacons;
-    List<Scan> current_scan;
+    List<Reading> current_scan;
     List<Integer> beacon_history;
     float alpha;
     int N;
     long timeout_period;
 
-    Scan current_estimate;
-    OnScanListener scan_listener;
+    Reading current_estimate;
+    OnReadingListener scan_listener;
     OnScanListListener scan_list_listener;
     File settings_file;
     BufferedReader beacon_settings;
 
-    NNTracker(OnScanListener scan_listener, OnScanListListener scan_list_listener) {
+    NNTracker(OnReadingListener scan_listener, OnScanListListener scan_list_listener) {
         this.scan_listener = scan_listener;
         this.scan_list_listener = scan_list_listener;
         beacons = new ArrayList<Beacon>();
-        current_scan = new ArrayList<Scan>();
+        current_scan = new ArrayList<Reading>();
         beacon_history = new ArrayList<Integer>();
-        current_estimate = new Scan();
+        current_estimate = new Reading();
         alpha = 1.0f;
         N = 1;
         timeout_period = 1000000;//1 s.
@@ -71,14 +75,14 @@ public class NNTracker implements OnScanListener {
 
     List<Beacon> Beacons() { return beacons; }
 
-    boolean IdentifyBeacon(Scan scan) {
+    boolean IdentifyBeacon(Reading scan) {
 
         for (Beacon b: beacons) {
-            if (b.mac_address.equals(scan.mac_address)) {
+            if (b.mac_address.equals(scan.getMacAddress())) {
                 return true;
             }
             else if (b.uuid.equals(scan.uuid)) {
-                b.mac_address = scan.mac_address;//update beacon's mac address if not present
+                b.mac_address = scan.getMacAddress();//update beacon's mac address if not present
                 return true;
             }
         }
@@ -86,7 +90,7 @@ public class NNTracker implements OnScanListener {
         return false;
     }
 
-    void UpdateCurrentScan(Scan scan) {
+    void UpdateCurrentScan(Reading scan) {
 
         long current_timestamp = SystemClock.elapsedRealtimeNanos() / 1000;
 
@@ -106,15 +110,15 @@ public class NNTracker implements OnScanListener {
         scan_list_listener.onScanList(current_scan);
     }
 
-    void NNEstimate(Scan scan) {
+    void NNEstimate(Reading scan) {
         //max beacon count from last N scans
 
         //max beacon
-        Scan max_scan = new Scan();
+        Reading max_scan = new Reading();
         max_scan.value = Float.NEGATIVE_INFINITY;
 
         //find the max value
-        for (Scan s : current_scan) {
+        for (Reading s : current_scan) {
             if (s.value > max_scan.value)
                 max_scan = s;
         }
@@ -122,7 +126,7 @@ public class NNTracker implements OnScanListener {
         int beacon_id = -1;
         //find the corresponding beacon id
         for (int i = 0; i < beacons.size(); i++) {
-            if (beacons.get(i).mac_address.equals(max_scan.mac_address)) {
+            if (beacons.get(i).mac_address.equals(max_scan.getMacAddress())) {
                 beacon_id = i;
                 break;
             }
@@ -155,11 +159,11 @@ public class NNTracker implements OnScanListener {
         current_estimate.translation[1] = b_max.y;
         current_estimate.translation[2] = b_max.z;
         current_estimate.value = max_scan.value;
-        scan_listener.onScan(current_estimate);
+        scan_listener.onReading(current_estimate);
     }
 
     @Override
-    public void onScan(Scan scan) {
+    public void onReading(Reading scan) {
 
         Log.i("NNTRACKER ONSCAN: ",scan.toString());
 
