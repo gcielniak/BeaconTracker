@@ -15,15 +15,15 @@ import android.widget.Toast;
 
 import java.util.List;
 
-public class MainActivity extends AppCompatActivity implements OnReadingListener, OnScanListListener{
+public class MainActivity extends AppCompatActivity implements OnReadingListener, OnScanListener{
 
     String TAG = "MainActivity";
-    BluetoothScanner bluetooth_scanner;
+    BluetoothScanner bluetooth_scanner;//bt scanner
+    FileScanner file_scanner;//file scanner
     NNTracker bluetooth_tracker;
     List<Reading> current_scan;
     Reading current_estimate;
     MapView map_view;
-    FileScanner file_scanner;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -33,7 +33,7 @@ public class MainActivity extends AppCompatActivity implements OnReadingListener
 
         bluetooth_tracker = new NNTracker(this, this);
         bluetooth_scanner = new BluetoothScanner(bluetooth_tracker);
-        bluetooth_tracker.alpha = 0.5f;
+        bluetooth_tracker.alpha = 0.5f;//take an average of the new and old reading
         file_scanner = new FileScanner(bluetooth_tracker);
         file_scanner.SetFile("test.txt");
     }
@@ -57,8 +57,8 @@ public class MainActivity extends AppCompatActivity implements OnReadingListener
     }
 
     @Override
-    public void onReading(Reading scan) {
-        current_estimate = scan;
+    public void onReading(Reading reading) {
+        current_estimate = reading;
         MainActivity.this.runOnUiThread(new Runnable() {
             @Override
             public void run() {
@@ -68,8 +68,8 @@ public class MainActivity extends AppCompatActivity implements OnReadingListener
     }
 
     @Override
-    public void onScanList(List<Reading> scan_list) {
-        current_scan = scan_list;
+    public void onScan(List<Reading> scan) {
+        current_scan = scan;
         MainActivity.this.runOnUiThread(new Runnable() {
             @Override
             public void run() {
@@ -91,6 +91,8 @@ public class MainActivity extends AppCompatActivity implements OnReadingListener
         }
 
         public void onResume() {
+            //recalculate view coordinates
+
             x_min = Float.POSITIVE_INFINITY;
             x_max = Float.NEGATIVE_INFINITY;
             y_min = Float.POSITIVE_INFINITY;
@@ -135,6 +137,9 @@ public class MainActivity extends AppCompatActivity implements OnReadingListener
 
         float getY(double y) { return (float)(height - (height*(y-y_min)/ratio)); }
 
+        /**
+         * Draw beacons, current scan (all beacons in the range) and current estimate of the position
+         */
         public void onDraw(Canvas canvas) {
             super.onDraw(canvas);
 

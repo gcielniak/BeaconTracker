@@ -6,6 +6,8 @@
       <module fileurl="file://$PROJECT_DIR$/BeaconTracker.iml" filepath="$PROJECT_DIR$/BeaconTracker.iml" />
       <module fileurl="file://$PROJECT_DIR$/../ScannerLib/ScannerLib.iml" filepath="$PROJECT_DIR$/../ScannerLib/ScannerLib.iml" />
       <module fileurl="file://$PROJECT_DIR$/app/app.iml" filepath="$PROJECT_DIR$/app/app.iml" />
+      <module fileurl="file://H:/code.iml" filepath="H:/code.iml" />
+      <module fileurl="file://$PROJECT_DIR$/../ScannerLib/scanner_lib/scanner_lib.iml" filepath="$PROJECT_DIR$/../ScannerLib/scanner_lib/scanner_lib.iml" />
       <module fileurl="file://$PROJECT_DIR$/../ScannerLib/scanner_lib/scanner_lib.iml" filepath="$PROJECT_DIR$/../ScannerLib/scanner_lib/scanner_lib.iml" />
     </modules>
   </component>

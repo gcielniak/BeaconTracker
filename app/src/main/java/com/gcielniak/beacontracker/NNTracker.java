@@ -16,7 +16,12 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Created by gcielniak on 11/10/2015.
+ * NNTracker - simple position tracker, taking the closest/strongest reading.
+ * Has three important parameters:
+ *  - alpha: amount of averaging between old and new readings (alpha = 1: trust only the new reading,
+ *    alpha = 0.5: take an average of both signals.
+ *  - N: select the strongest reading from the history of past N readings
+ *  - timeout_period: how long a readings is valid for.
  */
 public class NNTracker implements OnReadingListener {
     String TAG = "NNTracker";
@@ -28,27 +33,31 @@ public class NNTracker implements OnReadingListener {
     long timeout_period;
 
     Reading current_estimate;
-    OnReadingListener scan_listener;
-    OnScanListListener scan_list_listener;
+    OnReadingListener reading_listener;
+    OnScanListener scan_listener;
     File settings_file;
     BufferedReader beacon_settings;
 
-    NNTracker(OnReadingListener scan_listener, OnScanListListener scan_list_listener) {
+    NNTracker(OnReadingListener reading_listener, OnScanListener scan_listener) {
+        this.reading_listener = reading_listener;
         this.scan_listener = scan_listener;
-        this.scan_list_listener = scan_list_listener;
         beacons = new ArrayList<Beacon>();
         current_scan = new ArrayList<Reading>();
         beacon_history = new ArrayList<Integer>();
         current_estimate = new Reading();
-        alpha = 1.0f;
-        N = 1;
+        alpha = 1.0f;//take the newest reading, no averaging
+        N = 1;//skip the history
         timeout_period = 1000000;//1 s.
 
         LoadSettings();
     }
 
+    /**
+     * Load beacon location and ids
+     */
     public void LoadSettings() {
         try {
+            //curently reads from the Downloads folder
             settings_file = new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS),
                     "beacon_settings.txt");
             beacon_settings = new BufferedReader(new FileReader(settings_file));
@@ -107,11 +116,11 @@ public class NNTracker implements OnReadingListener {
                 current_scan.remove(i-1);
         }
 
-        scan_list_listener.onScanList(current_scan);
+        scan_listener.onScan(current_scan);
     }
 
     void NNEstimate(Reading scan) {
-        //max beacon count from last N scans
+        //max beacon count from the last N scans
 
         //max beacon
         Reading max_scan = new Reading();
@@ -132,7 +141,7 @@ public class NNTracker implements OnReadingListener {
             }
         }
 
-        //update the beacon history
+        //update beacon history
         beacon_history.add(beacon_id);
         if (beacon_history.size() > N)
             beacon_history.remove(0);
@@ -159,7 +168,7 @@ public class NNTracker implements OnReadingListener {
         current_estimate.translation[1] = b_max.y;
         current_estimate.translation[2] = b_max.z;
         current_estimate.value = max_scan.value;
-        scan_listener.onReading(current_estimate);
+        reading_listener.onReading(current_estimate);
     }
 
     @Override
